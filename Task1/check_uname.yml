@@ -1,0 +1,13 @@
+---
+- name: 执行uname -a命令并获取输出
+  hosts: all
+  become: no
+  tasks:
+    - name: run uname -a
+      command: uname -a
+      register: uname_result
+      failed_when: false
+
+    - name: 打印uname -a的输出结果
+      debug:
+        msg: "服务器 {{ inventory_hostname }} 的uname -a信息：{{ uname_result.stdout }}"
