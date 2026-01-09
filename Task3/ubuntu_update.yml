@@ -1,0 +1,47 @@
+- name: 执行Ubuntu源更新并查看可升级包
+  hosts: ubuntu
+  gather_facts: yes
+  become: yes
+  tasks:
+    - name: 执行apt update刷新源缓存
+      command: apt update -y
+      register: apt_update_result
+      changed_when: false  
+      ignore_errors: yes   
+      retries: 3
+      delay: 5
+    
+    - name: 执行apt upgrade安装所有补丁（避免配置文件交互）
+      command: >
+        apt upgrade -y 
+        -o Dpkg::Options::="--force-confdef" 
+        -o Dpkg::Options::="--force-confold"
+      register: apt_upgrade_result
+      changed_when: false
+      ignore_errors: yes
+      when: apt_update_result.rc == 0
+
+    - name: 执行apt autoremove清理冗余依赖
+      command: apt autoremove -y
+      register: apt_autoremove_result
+      changed_when: false
+      ignore_errors: yes
+      when: apt_upgrade_result.rc == 0
+
+    - name: 检测重启标记文件
+      command: bash -c "if [ -f /var/run/reboot-required ]; then echo 'yes'; else echo 'no'; fi"
+      register: reboot_required
+      changed_when: false
+      ignore_errors: yes
+
+    - name: 输出补丁执行汇总
+      debug:
+        msg: |
+          ==============================================
+          节点：{{ inventory_hostname }}
+          1. 源缓存更新：{% if apt_update_result.rc == 0 %}成功{% else %}失败（{{ apt_update_result.stderr | default('未知错误') }}){% endif %}
+          2. 补丁安装输出：{{ apt_upgrade_result.stdout_lines | default('无') }}
+          3. 补丁安装错误：{{ apt_upgrade_result.stderr | default('无') }}
+          4. 冗余依赖清理：{% if apt_autoremove_result.rc == 0 %}成功{% else %}失败{% endif %}
+          5. 是否需要重启：{% if reboot_required.rc == 0 %}是（内核补丁）{% else %}否{% endif %}
+          ==============================================

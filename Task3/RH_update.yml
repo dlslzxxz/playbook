@@ -1,0 +1,39 @@
+- name: run_update
+  hosts: redhat
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: 更新YUM/DNF源缓存
+      command: yum makecache -y
+      register: yum_update
+      changed_when: false
+      ignore_errors: yes
+
+    - name: RHEL/CentOS/Rocky 缓存
+      command: yum update -y 
+      register: yum_upgrade
+      changed_when: false
+      ignore_errors: yes
+      when: yum_update.rc == 0
+
+    - name: 清理冗余依赖和缓存包
+      command: yum autoremove -y && yum clean all
+      register: yum_clean
+      changed_when: false
+      ignore_errors: yes
+
+    - name: 检查系统是否需要重启
+      command: bash -c "if [ -f /var/run/reboot-required ]; then echo 'yes'; else echo 'no'; fi"
+      register: reboot_required
+      changed_when: false
+
+    - name: 输出补丁执行结果
+      debug:
+        msg: |
+          ==============================================
+          节点IP: {{ inventory_hostname }}
+          源更新状态: {% if yum_update.rc == 0 %}✅成功{% else %}❌失败: {{ yum_update.stderr }}{% endif %}
+          安全补丁安装: {% if yum_upgrade.rc == 0 %}✅成功{% else %}❌失败: {{ yum_upgrade.stderr }}{% endif %}
+          缓存清理状态: {% if yum_clean.rc == 0 %}✅成功{% else %}❌失败: {{ yum_clean.stderr }}{% endif %}
+          是否需要重启: {% if reboot_required.stdout == "yes" %}⚠️ 是(内核补丁已更新){% else %}✅否{% endif %}
