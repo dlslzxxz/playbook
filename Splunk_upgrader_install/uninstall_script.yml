@@ -1,0 +1,13 @@
+---
+- name: Run /opt/a.sh on multiple servers
+  hosts: splunk_uf        # inventory 中定义的主机组
+  become: yes             # 提升权限为 root
+  tasks:
+    - name: uninstall upgrader
+      ansible.builtin.shell: /opt/splunkupgrader/bin/uninstall.sh
+
+    - name: clean dir
+      ansible.builtin.file:
+        path: /opt/splunkupgrader
+        state: absent
+

@@ -1,0 +1,51 @@
+- name: install_UF
+  hosts: uf_install
+  become: yes
+  become_user: root
+  gather_facts: false
+
+  tasks:
+    - name: download_rpm
+      ansible.builtin.shell:
+        cmd: wget -O /opt/splunkforwarder-9.3.4-30e72d3fb5f7.x86_64.rpm "https://download.splunk.com/products/universalforwarder/releases/9.3.4/linux/splunkforwarder-9.3.4-30e72d3fb5f7.x86_64.rpm"  
+ 
+    - name: install_rpm
+      ansible.builtin.shell:
+        cmd: rpm -Uvh /opt/splunkforwarder-9.3.4-30e72d3fb5f7.x86_64.rpm
+
+    - name: as_root
+      ansible.builtin.file:
+        path: /opt/splunkforwarder
+        owner: root
+        group: root
+        mode: '0755'
+        recurse: yes
+
+    - name: deploy_conf
+      ansible.builtin.copy:
+        src: /opt/semaphores/playbook/install_UF/user-seed.conf
+        dest: /opt/splunkforwarder/etc/system/local/user-seed.conf
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: boot_start
+      ansible.builtin.shell:
+        cmd: /opt/splunkforwarder/bin/splunk enable boot-start -user root --accept-license --answer-yes --no-prompt
+
+
+    - name: run_splunk
+      ansible.builtin.shell:
+        cmd: /opt/splunkforwarder/bin/splunk start --accept-license  --answer-yes --no-prompt
+
+    - name: set_deployment
+      ansible.builtin.copy:
+        src: /opt/semaphores/playbook/install_UF/deploymentclient.conf
+        dest: /opt/splunkforwarder/etc/system/local/deploymentclient.conf
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: restart
+      ansible.builtin.shell:
+        cmd: /opt/splunkforwarder/bin/splunk restart

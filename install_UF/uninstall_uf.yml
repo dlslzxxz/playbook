@@ -1,0 +1,12 @@
+- name: Uninstall_UF
+  hosts: uf_install
+  become: yes
+  become_user: root
+  gather_facts: false
+
+  tasks:
+    - name: Uninstall
+      package:
+        name: splunkforwarder
+        state: absent
+

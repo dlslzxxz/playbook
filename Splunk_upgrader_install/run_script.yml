@@ -1,0 +1,10 @@
+- name: Run Splunk Upgrader-install
+  hosts: splunk_uf
+  become: yes
+  become_user: root
+  gather_facts: false
+
+  tasks:
+    - name: run install
+      ansible.builtin.shell: /opt/splunkforwarder/etc/apps/upgrader_install/bin/upgrader_install.sh
+

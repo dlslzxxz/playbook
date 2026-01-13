@@ -1,0 +1,15 @@
+- name: 安装核心更新，SYSTEM权限执行，无任务计划程序依赖
+  ansible.windows.win_updates:
+    category_names:
+      - SecurityUpdates
+      - CriticalUpdates
+      - UpdateRollups
+    accept_list:
+      - KB4056892
+      - KB4073117
+    state:
+      searched
+
+  become: true
+  become_method: runas
+  become_user: SYSTEM

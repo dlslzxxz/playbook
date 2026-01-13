@@ -1,0 +1,15 @@
+- name: get_hostname
+  hosts: localhost
+  become: yes
+  become_user: root
+  gather_facts: false
+    
+  tasks:
+    - name: login_server
+      ansible.builtin.shell:
+        cat /etc/redhat-release
+      register: hostname
+    
+    - name: debug
+      debug:
+        msg: " {{ hostname.stdout }}"
